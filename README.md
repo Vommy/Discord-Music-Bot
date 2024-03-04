@@ -1,2 +1,3 @@
 # Discord-Music-Bot
-A discord bot that plays music in your voice channel. 
+
+A discord bot that plays music in a voice channel.

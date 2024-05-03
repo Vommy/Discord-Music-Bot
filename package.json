@@ -25,9 +25,13 @@
   "dependencies": {
     "@discordjs/opus": "github:discordjs/opus",
     "@discordjs/voice": "^0.16.1",
+    "discord-music-player": "^9.1.1",
     "discord.js": "^14.14.1",
     "dotenv": "^16.4.5",
     "ffmpeg": "^0.0.4",
-    "libsodium-wrappers": "^0.7.13"
+    "isomorphic-unfetch": "^4.0.2",
+    "libsodium-wrappers": "^0.7.13",
+    "mediaplex": "^0.0.9",
+    "youtube-ext": "^1.1.25"
   }
 }

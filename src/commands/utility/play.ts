@@ -1,55 +1,47 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
-const { createAudioPlayer, createAudioResource } = require("@discordjs/voice");
+import MySuperClient from "../../classes/MySuperClient";
 
 import {
-  getVoiceConnection,
-  AudioPlayerStatus,
-  AudioPlayerError,
-} from "@discordjs/voice";
-import { ChatInputCommandInteraction } from "discord.js";
-
-const { join } = require("node:path");
+  ChatInputCommandInteraction,
+  CommandInteraction,
+  SlashCommandStringOption,
+} from "discord.js";
 
 /**
  * Connects the bot to a voice channel that the user is connected to.
  * */
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("play")
-    .setDescription(
-      "Disconnects the music bot from a voice channel, if it is connected."
+    .setName("maisan")
+    .setDescription("Plays music.")
+    .addStringOption((option: SlashCommandStringOption) =>
+      option
+        .setName("audio_url")
+        .setDescription("The URL of the audio resource.")
+        .setRequired(true)
     ),
-  async execute(interaction: ChatInputCommandInteraction) {
-    if (interaction.guildId) {
-      const conn = getVoiceConnection(interaction.guildId);
-      if (conn) {
-        console.log("Connection found!");
-      }
-      try {
-        const player = createAudioPlayer();
-        conn?.subscribe(player);
-        let resource = createAudioResource(
-          "C:\\xampp\\htdocs\\Discord-Music-Bot\\src\\commands\\utility\\wow.mp3"
-        );
-        player.play(resource);
-
-        player.on("error", (error: AudioPlayerError) => {
-          console.log(
-            "Error playing audio",
-            error.message,
-            "with track ",
-            error.resource.metadata
-          );
+  async execute(
+    client: MySuperClient,
+    interaction: ChatInputCommandInteraction
+  ) {
+    const member = await interaction.guild?.members.fetch(interaction.user.id);
+    if (member && interaction.guild?.id) {
+      const queue = await client.player.createQueue(interaction.guild?.id);
+      if (!queue.connection && member.voice.channel)
+        await queue.join(member.voice.channel);
+      let url = interaction.options.getString("audio_url");
+      if (url) {
+        await queue.play(url).catch((err) => {
+          console.log(err);
+          let id = interaction.guild?.id;
+          if (id !== undefined) {
+            let guildQueue = client.player.getQueue(id);
+            if (!guildQueue) queue.stop();
+          }
         });
-        player.on("stateChange", (oldState: any, newState: any) => {
-          console.log(
-            `Player transitioned from ${oldState.status} to ${newState.status}`
-          );
-        });
-      } catch (e) {
-        console.log("Error: ", e);
       }
+    } else {
+      let message = "Please connect to a voice channel.";
     }
-    await interaction.reply("Playing audio...");
   },
 };

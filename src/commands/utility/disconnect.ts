@@ -15,11 +15,19 @@ module.exports = {
       "Disconnects the music bot from a voice channel, if it is connected."
     ),
   async execute(interaction: ChatInputCommandInteraction) {
-    if (interaction.guildId) {
-      const conn = getVoiceConnection(interaction.guildId);
-      conn?.destroy();
-    }
+    let message: string | undefined = undefined;
+    try {
+      if (interaction.guildId) {
+        const conn = getVoiceConnection(interaction.guildId);
+        if (conn) {
+          conn?.destroy();
+          message = "Disconnected!";
+        } else {
+          message = "?";
+        }
+      }
+    } catch {}
 
-    await interaction.reply("Disconnected");
+    await interaction.reply({ content: message, ephemeral: true });
   },
 };

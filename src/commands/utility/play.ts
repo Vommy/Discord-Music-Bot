@@ -1,9 +1,9 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
-import MySuperClient from "../../classes/MySuperClient";
+import { Player } from "discord-player";
+const { useMainPlayer } = require("discord-player");
 
 import {
   ChatInputCommandInteraction,
-  CommandInteraction,
   SlashCommandStringOption,
 } from "discord.js";
 
@@ -12,7 +12,7 @@ import {
  * */
 module.exports = {
   data: new SlashCommandBuilder()
-    .setName("maisan")
+    .setName("play")
     .setDescription("Plays music.")
     .addStringOption((option: SlashCommandStringOption) =>
       option
@@ -20,28 +20,34 @@ module.exports = {
         .setDescription("The URL of the audio resource.")
         .setRequired(true)
     ),
-  async execute(
-    client: MySuperClient,
-    interaction: ChatInputCommandInteraction
-  ) {
+  async execute(interaction: ChatInputCommandInteraction) {
+    const player: Player = useMainPlayer();
+    await player.extractors.loadDefault();
     const member = await interaction.guild?.members.fetch(interaction.user.id);
-    if (member && interaction.guild?.id) {
-      const queue = await client.player.createQueue(interaction.guild?.id);
-      if (!queue.connection && member.voice.channel)
-        await queue.join(member.voice.channel);
-      let url = interaction.options.getString("audio_url");
-      if (url) {
-        await queue.play(url).catch((err) => {
-          console.log(err);
-          let id = interaction.guild?.id;
-          if (id !== undefined) {
-            let guildQueue = client.player.getQueue(id);
-            if (!guildQueue) queue.stop();
-          }
-        });
+    if (member) {
+      const channel = member.voice.channel;
+      if (!channel) {
+        return interaction.reply("You are not connected to a voice channel!");
       }
-    } else {
-      let message = "Please connect to a voice channel.";
+      const audio = interaction.options.getString("audio_url");
+      if (audio) {
+        await interaction.deferReply();
+
+        try {
+          const { track } = await player.play(channel, audio, {
+            nodeOptions: {
+              // nodeOptions are the options for guild node (aka your queue in simple word)
+              metadata: interaction, // we can access this metadata object using queue.metadata later on
+            },
+          });
+          return interaction.followUp(`Now playing: **${track.title}**`);
+        } catch (e) {
+          // let's return error if something failed
+          return interaction.followUp(`Something went wrong: ${e}`);
+        }
+      }
+      return interaction.reply("Error: Could not find song!");
     }
+    return interaction.reply("Error: Could not find member!");
   },
 };

@@ -1,9 +1,6 @@
-import {
-  SlashCommandBuilder,
-  ChatInputCommandInteraction,
-  VoiceChannel,
-} from "discord.js";
+import { SlashCommandBuilder, ChatInputCommandInteraction } from "discord.js";
 import { getVoiceConnection } from "@discordjs/voice";
+import MySuperClient from "../../classes/MySuperClient";
 
 /**
  * Connects the bot to a voice channel that the user is connected to.
@@ -14,7 +11,10 @@ module.exports = {
     .setDescription(
       "Disconnects the music bot from a voice channel, if it is connected."
     ),
-  async execute(interaction: ChatInputCommandInteraction) {
+  async execute(
+    client: MySuperClient,
+    interaction: ChatInputCommandInteraction
+  ) {
     let message: string | undefined = undefined;
     try {
       if (interaction.guildId) {

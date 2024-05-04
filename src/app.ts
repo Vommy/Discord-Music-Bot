@@ -1,4 +1,6 @@
+import { GuildQueue, Player, Track } from "discord-player";
 import MySuperClient from "./classes/MySuperClient";
+const { EmbedBuilder } = require("discord.js");
 
 //Dependencies
 const dotenv = require("dotenv");
@@ -8,6 +10,7 @@ const path = require("node:path");
 dotenv.config();
 
 const client = new MySuperClient();
+const player: Player = new Player(client);
 
 //Initializes client commands as a new collection.
 const foldersPath = path.join(__dirname, "commands");
@@ -57,11 +60,34 @@ for (const file of eventFiles) {
   }
 }
 
+//Handle all events through the client itself. Much easier to actually interact with.
+
 client.on("ready", () => {
   console.log("Vommy's music bot is ready to rock and roll!");
 });
 
+player.events.on("playerStart", (queue, track) => {
+  const songEmbed = new EmbedBuilder()
+    .setColor(0x0099ff)
+    .setTitle(`**${track.title}`)
+    .setURL("https://discord.js.org/")
+    .setAuthor({
+      name: `${track.author}`,
+      url: "https://discord.js.org",
+    })
+    .setDescription(`${track.description}`)
+    .setThumbnail(`${track.thumbnail}`)
+    .setImage(`${track.thumbnail}`);
+
+  queue.metadata.channel.send({ embeds: [songEmbed] });
+});
+
+player.events.on("playerPause", (queue: GuildQueue<any>) => {
+  queue.metadata.channel.send(`Playback paused.`);
+});
+
 // Better code for interaction handling than having a separate file.
+
 client.on("interactionCreate", async (interaction) => {
   if (!interaction.isCommand()) return;
 
@@ -73,7 +99,7 @@ client.on("interactionCreate", async (interaction) => {
   }
 
   try {
-    await command.execute(client, interaction);
+    await command.execute(interaction);
   } catch (error) {
     console.error(error);
     if (interaction.replied || interaction.deferred) {

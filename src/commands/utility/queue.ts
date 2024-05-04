@@ -28,7 +28,9 @@ module.exports = {
       //ADD
       //Need to check if queue has a max size (not full)
       queue.insertTrack(searchResult.tracks[0], queue.getSize()); //Remember queue index starts from 0, not 1
-      await interaction.reply(`Queued: **${searchResult.tracks[0].title}**`);
+      await interaction.reply(
+        `Queued: **${searchResult.tracks[0].title} by ${searchResult.tracks[0].author}**`
+      );
     }
   },
 };

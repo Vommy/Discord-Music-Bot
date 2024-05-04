@@ -1,5 +1,7 @@
 import { GuildQueue, Player, Track } from "discord-player";
 import MySuperClient from "./classes/MySuperClient";
+import { Embed } from "discord.js";
+import ytdl from "ytdl-core";
 const { EmbedBuilder } = require("discord.js");
 
 //Dependencies
@@ -10,7 +12,12 @@ const path = require("node:path");
 dotenv.config();
 
 const client = new MySuperClient();
-const player: Player = new Player(client);
+const player: Player = new Player(client, {
+  skipFFmpeg: false,
+  ytdlOptions: {
+    quality: "highestaudio",
+  },
+});
 
 //Initializes client commands as a new collection.
 const foldersPath = path.join(__dirname, "commands");
@@ -67,10 +74,10 @@ client.on("ready", () => {
 });
 
 player.events.on("playerStart", (queue, track) => {
-  const songEmbed = new EmbedBuilder()
+  let songEmbed: Embed = new EmbedBuilder()
     .setColor(0x0099ff)
-    .setTitle(`**${track.title}`)
-    .setURL("https://discord.js.org/")
+    .setTitle(`${track.title}`)
+    .setURL(`${track.url}`)
     .setAuthor({
       name: `${track.author}`,
       url: "https://discord.js.org",
@@ -79,12 +86,24 @@ player.events.on("playerStart", (queue, track) => {
     .setThumbnail(`${track.thumbnail}`)
     .setImage(`${track.thumbnail}`);
 
+  if (songEmbed.image) songEmbed.image.url = track.title;
+
   queue.metadata.channel.send({ embeds: [songEmbed] });
 });
 
-player.events.on("playerPause", (queue: GuildQueue<any>) => {
-  queue.metadata.channel.send(`Playback paused.`);
+player.events.on("error", (queue, e) => {
+  console.log("Error", e);
 });
+
+client.on("error", (e) => {
+  console.log("Error: ", e);
+});
+
+player.on("debug", console.log);
+
+player.events.on("debug", (queue, message) =>
+  console.log(`[DEBUG ${queue.guild.id}] ${message}`)
+);
 
 // Better code for interaction handling than having a separate file.
 

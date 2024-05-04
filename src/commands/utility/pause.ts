@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
-import { GuildQueue, Player } from "discord-player";
+import { GuildQueue } from "discord-player";
 const { useQueue } = require("discord-player");
 
 import {
@@ -16,9 +16,13 @@ module.exports = {
       const queue: GuildQueue = useQueue(interaction.guild.id);
       queue.node.setPaused(!queue.node.isPaused());
       if (queue.node.isPaused())
-        await interaction.reply(`Paused playback of : ${queue.currentTrack}`);
+        await interaction.reply(
+          `Paused playback of : **${queue.currentTrack}**`
+        );
       else
-        await interaction.reply(`Resumed playback of : ${queue.currentTrack}`);
+        await interaction.reply(
+          `Resumed playback of : **${queue.currentTrack}**`
+        );
     }
   },
 };

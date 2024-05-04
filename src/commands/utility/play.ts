@@ -1,6 +1,6 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
 import { Player } from "discord-player";
-const { useMainPlayer } = require("discord-player");
+const { useMainPlayer, useQueue } = require("discord-player");
 
 import {
   ChatInputCommandInteraction,
@@ -21,17 +21,23 @@ module.exports = {
         .setRequired(true)
     ),
   async execute(interaction: ChatInputCommandInteraction) {
+    // FIX: NEED TO CHECK IF THERE IS AN EXISTING QUEUE.
     const player: Player = useMainPlayer();
     await player.extractors.loadDefault();
     const member = await interaction.guild?.members.fetch(interaction.user.id);
     if (member) {
       const channel = member.voice.channel;
       if (!channel) {
-        return interaction.reply("You are not connected to a voice channel!");
+        return interaction.reply({
+          content: `You are not connected to a voice channel.`,
+          ephemeral: true,
+        });
       }
       const audio = interaction.options.getString("audio_url");
       if (audio) {
         await interaction.deferReply();
+
+        const queue = useQueue(interaction.guild?.id);
 
         try {
           const { track } = await player.play(channel, audio, {

@@ -1,14 +1,12 @@
-import { GuildQueue, Player, Track } from "discord-player";
+import { Player } from "discord-player";
 import MySuperClient from "./classes/MySuperClient";
 import { Embed } from "discord.js";
-import ytdl from "ytdl-core";
 const { EmbedBuilder } = require("discord.js");
 
 //Dependencies
 const dotenv = require("dotenv");
 const fs = require("node:fs");
 const path = require("node:path");
-
 dotenv.config();
 
 const client = new MySuperClient();
@@ -89,6 +87,10 @@ player.events.on("playerStart", (queue, track) => {
   if (songEmbed.image) songEmbed.image.url = track.title;
 
   queue.metadata.channel.send({ embeds: [songEmbed] });
+});
+
+player.events.on("playerSkip", (queue, track) => {
+  queue.metadata.channel.send(`Now playing: **${track.title}**`);
 });
 
 player.events.on("error", (queue, e) => {

@@ -17,7 +17,6 @@ module.exports = {
               `Running it back to the previous song: ${history.previousTrack.title}`
             );
           }
-          return;
         }
         await interaction.reply(`Playback error: No previous song found.`);
       }

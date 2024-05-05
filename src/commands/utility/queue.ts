@@ -1,4 +1,4 @@
-import { GuildQueue, Player, SearchResult } from "discord-player";
+import { GuildQueue, Player } from "discord-player";
 import {
   ChatInputCommandInteraction,
   SlashCommandBuilder,
@@ -19,18 +19,28 @@ module.exports = {
     ),
   async execute(interaction: ChatInputCommandInteraction) {
     let audio = interaction.options.getString("audio_url");
-    if (interaction.guild && audio && audio.length) {
+    if (interaction.guild && audio) {
       const player: Player = useMainPlayer();
       const queue: GuildQueue = useQueue(interaction.guild.id);
-      const searchResult = await player.search(audio, {
-        requestedBy: interaction.user,
-      });
-      //ADD
-      //Need to check if queue has a max size (not full)
-      queue.insertTrack(searchResult.tracks[0], queue.getSize()); //Remember queue index starts from 0, not 1
-      await interaction.reply(
-        `Queued: **${searchResult.tracks[0].title} by ${searchResult.tracks[0].author}**`
-      );
+      if (queue) {
+        const searchResult = await player.search(audio, {
+          requestedBy: interaction.user,
+        });
+        let song = searchResult.tracks[0];
+        if (queue.size < queue.getCapacity()) {
+          queue.insertTrack(song, queue.getSize());
+          await interaction.reply(
+            `**${"Song queued"}**:\n> \`${song.title} by ${song.author}\``
+          );
+        } else {
+          await interaction.reply(
+            `**Queue is currently full with ${queue.size} tracks.**\n> Please wait for more room in the song queue, then try again. `
+          );
+        }
+      } else
+        await interaction.reply(
+          `**${"/queue Error"}**: There are no active songs.\nPlease play a song first, using \`/play\`.`
+        );
     }
   },
 };

@@ -81,14 +81,46 @@ player.events.on("playerStart", (queue, track) => {
       url: "https://discord.js.org",
     })
     .setDescription(`${track.description}`)
-    .setThumbnail(`${track.thumbnail}`)
-    .setImage(`${track.thumbnail}`);
+    .setThumbnail(
+      `${track.playlist ? track.playlist.thumbnail : track.thumbnail}`
+    )
+    .setImage(
+      ` ${
+        track.playlist && queue.currentTrack != null
+          ? queue.currentTrack.thumbnail
+          : track.thumbnail
+      }`
+    );
 
-  if (songEmbed.image) songEmbed.image.url = track.title;
-
+  //This counts as a reply already.
   queue.metadata.channel.send({
     embeds: [songEmbed],
   });
+});
+
+/**
+ * Queue event. Everytime a song is queued, send a small embed of the song to the channel that the command was invoked in.
+ */
+player.events.on("audioTrackAdd", (queue, track) => {
+  if ((queue.size > 1 || queue.isPlaying()) && track != queue.currentTrack) {
+    let songEmbed = new EmbedBuilder()
+      .setColor(0x0099ff)
+      .setTitle(`${track.title}`)
+      .setURL(`${track.url}`)
+      .setAuthor({
+        name: `${track.author}`,
+        url: `${track.url}`,
+      })
+      .setDescription(`${track.description}`)
+      .setThumbnail(
+        `${track.playlist ? track.playlist.thumbnail : track.thumbnail}`
+      );
+
+    //This counts as a reply already
+    queue.metadata.channel.send({
+      embeds: [songEmbed],
+    });
+  }
 });
 
 player.events.on("error", (queue, e) => {
@@ -123,12 +155,12 @@ client.on("interactionCreate", async (interaction) => {
     console.error(error);
     if (interaction.replied || interaction.deferred) {
       await interaction.followUp({
-        content: "There was an error while executing this command!",
+        content: `There was an error while executing ${interaction.commandName}!`,
         ephemeral: true,
       });
     } else {
       await interaction.reply({
-        content: "There was an error while executing this command!",
+        content: `There was an error while executing ${interaction.commandName}!`,
         ephemeral: true,
       });
     }

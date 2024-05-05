@@ -10,7 +10,7 @@ module.exports = {
       if (interaction.guild.id) {
         const queue = useQueue(interaction.guild.id);
         if (queue) queue.tracks.shuffle();
-        await interaction.reply(`Song Queue Shuffled!`);
+        await interaction.reply(`**Song Queue Shuffled!**`);
       }
     }
   },

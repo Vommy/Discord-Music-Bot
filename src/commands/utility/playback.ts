@@ -12,14 +12,21 @@ module.exports = {
         const history: GuildQueueHistory = useHistory(interaction.guild.id);
         if (history) {
           if (history.previousTrack) {
+            await interaction.deferReply();
+
+            let previousSong = `\`${history.previousTrack.title} by ${history.previousTrack.author}\``;
             await history.previous();
-            await interaction.reply(
-              `Running it back to the previous song: ${history.previousTrack.title}`
+            return interaction.followUp(
+              `Running it back to the previous song:\n> ${previousSong}`
             );
           }
+          return interaction.reply(`Playback error: No previous song found.`);
         }
-        await interaction.reply(`Playback error: No previous song found.`);
+        return interaction.reply(
+          `**Playback error**: *No song history found.*\n> Please play a song first using \`/play\``
+        );
       }
     }
+    return interaction.reply(`Error: No Guild Found!`);
   },
 };

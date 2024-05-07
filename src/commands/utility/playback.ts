@@ -17,7 +17,7 @@ module.exports = {
             let previousSong = `\`${history.previousTrack.title} by ${history.previousTrack.author}\``;
             await history.previous();
             return interaction.followUp(
-              `Running it back to the previous song:\n> ${previousSong}`
+              `**Running it back to the previous song**:\n> ${previousSong}`
             );
           }
           return interaction.reply(`Playback error: No previous song found.`);

@@ -1,6 +1,6 @@
 import { Player } from "discord-player";
 import MySuperClient from "./classes/MySuperClient";
-import { Embed } from "discord.js";
+import { Embed, Events } from "discord.js";
 const { EmbedBuilder } = require("discord.js");
 
 //Dependencies
@@ -77,8 +77,15 @@ player.events.on("playerStart", (queue, track) => {
     .setTitle(`${track.title}`)
     .setURL(`${track.url}`)
     .setAuthor({
-      name: `${track.author}`,
-      url: "https://discord.js.org",
+      name: `${
+        track.playlist
+          ? "Playlist: `" +
+            track.playlist.title +
+            "` by " +
+            track.playlist.author.name
+          : track.author
+      }`,
+      url: `${track.playlist ? track.playlist.url : track.url}`,
     })
     .setDescription(`${track.description}`)
     .setThumbnail(
@@ -95,6 +102,7 @@ player.events.on("playerStart", (queue, track) => {
   //This counts as a reply already.
   queue.metadata.channel.send({
     embeds: [songEmbed],
+    content: "**Now playing...**",
   });
 });
 
@@ -105,13 +113,19 @@ player.events.on("audioTrackAdd", (queue, track) => {
   if ((queue.size > 1 || queue.isPlaying()) && track != queue.currentTrack) {
     let songEmbed = new EmbedBuilder()
       .setColor(0x0099ff)
-      .setTitle(`${track.title}`)
-      .setURL(`${track.url}`)
+      .setTitle(`${track.playlist ? track.playlist.title : track.title}`)
+      .setURL(`${track.playlist ? track.playlist.url : track.url}`)
       .setAuthor({
-        name: `${track.author}`,
-        url: `${track.url}`,
+        name: `${
+          track.playlist
+            ? "Playlist by: " + track.playlist.author.name
+            : track.author
+        }`,
+        url: `${track.playlist ? track.playlist.url : track.url}`,
       })
-      .setDescription(`${track.description}`)
+      .setDescription(
+        `${track.playlist ? track.playlist.description : track.description}`
+      )
       .setThumbnail(
         `${track.playlist ? track.playlist.thumbnail : track.thumbnail}`
       );
@@ -127,44 +141,61 @@ player.events.on("error", (queue, e) => {
   console.log("Error", e);
 });
 
-client.on("error", (e) => {
-  console.log("Error: ", e);
-});
-
 player.on("debug", console.log);
 
 player.events.on("debug", (queue, message) =>
   console.log(`[DEBUG ${queue.guild.id}] ${message}`)
 );
 
-// Better code for interaction handling than having a separate file.
+client.on("error", (e) => {
+  console.log("Error: ", e);
+});
+
+// Better code for interaction and autocomplete handling than having a separate file.
 
 client.on("interactionCreate", async (interaction) => {
-  if (!interaction.isCommand()) return;
+  if (interaction.isCommand()) {
+    const command = client.commands.get(interaction.commandName);
 
-  const command = client.commands.get(interaction.commandName);
-
-  if (!command) {
-    console.error(`No command matching ${interaction.commandName} was found.`);
-    return;
-  }
-
-  try {
-    await command.execute(interaction);
-  } catch (error) {
-    console.error(error);
-    if (interaction.replied || interaction.deferred) {
-      await interaction.followUp({
-        content: `There was an error while executing ${interaction.commandName}!`,
-        ephemeral: true,
-      });
-    } else {
-      await interaction.reply({
-        content: `There was an error while executing ${interaction.commandName}!`,
-        ephemeral: true,
-      });
+    if (!command) {
+      console.error(
+        `No command matching ${interaction.commandName} was found.`
+      );
+      return;
     }
-  }
+
+    try {
+      await command.execute(interaction);
+    } catch (error) {
+      console.error(error);
+      if (interaction.replied || interaction.deferred) {
+        await interaction.followUp({
+          content: `There was an error while executing ${interaction.commandName}!`,
+          ephemeral: true,
+        });
+      } else {
+        await interaction.reply({
+          content: `There was an error while executing ${interaction.commandName}!`,
+          ephemeral: true,
+        });
+      }
+    }
+  } else if (interaction.isAutocomplete()) {
+    const command = client.commands.get(interaction.commandName);
+
+    if (!command) {
+      console.error(
+        `No command matching ${interaction.commandName} was found.`
+      );
+      return;
+    }
+
+    try {
+      await command.autocomplete(interaction);
+    } catch (error) {
+      console.error(error);
+    }
+  } else return;
 });
 
 client.login(process.env.TOKEN);

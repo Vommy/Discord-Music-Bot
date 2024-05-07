@@ -9,8 +9,13 @@ module.exports = {
     if (interaction.guild) {
       if (interaction.guild.id) {
         const queue = useQueue(interaction.guild.id);
-        if (queue) queue.tracks.shuffle();
-        await interaction.reply(`**Song Queue Shuffled!**`);
+        if (queue) {
+          queue.tracks.shuffle();
+          await interaction.reply(`**Song Queue Shuffled!**`);
+        } else
+          await interaction.reply(
+            `**/shuffle Error**: *There are no songs to shuffle.*\n> Please queue or play some songs, then try again.`
+          );
       }
     }
   },

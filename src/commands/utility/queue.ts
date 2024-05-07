@@ -1,6 +1,7 @@
-import { GuildQueue, Player } from "discord-player";
+import { GuildQueue, Player, Playlist, Track } from "discord-player";
 import {
   ChatInputCommandInteraction,
+  EmbedBuilder,
   SlashCommandBuilder,
   SlashCommandStringOption,
 } from "discord.js";
@@ -19,28 +20,60 @@ module.exports = {
     ),
   async execute(interaction: ChatInputCommandInteraction) {
     let audio = interaction.options.getString("audio_url");
+
     if (interaction.guild && audio) {
       const player: Player = useMainPlayer();
       const queue: GuildQueue = useQueue(interaction.guild.id);
-      if (queue) {
-        const searchResult = await player.search(audio, {
-          requestedBy: interaction.user,
-        });
-        let song = searchResult.tracks[0];
-        if (queue.size < queue.getCapacity()) {
-          queue.insertTrack(song, queue.getSize());
-          await interaction.reply(
-            `**${"Song queued"}**:\n> \`${song.title} by ${song.author}\``
+      const member = await interaction.guild?.members.fetch(
+        interaction.user.id
+      );
+      if (member) {
+        const channel = member.voice.channel;
+
+        await interaction.deferReply();
+        if (queue) {
+          const searchResult = await player.search(audio, {
+            requestedBy: interaction.user,
+          });
+          let song: Track;
+          song = searchResult.tracks[0];
+          if (searchResult.playlist && channel && song.playlist) {
+            queue.tracks.add(searchResult.playlist.tracks);
+            let songEmbed = new EmbedBuilder()
+              .setColor(0x0099ff)
+              .setTitle(`${searchResult.playlist.title}`)
+              .setURL(`${searchResult.playlist.url}`)
+              .setAuthor({
+                name: `${"Playlist by: " + searchResult.playlist.author.name}`,
+                url: `${searchResult.playlist.url}`,
+              })
+              .setDescription(`${searchResult.playlist.description}`)
+              .setThumbnail(`${searchResult.playlist.thumbnail}`);
+
+            await interaction.followUp({
+              content: `**${"Playlist queued"}**:\n> \`${
+                song.playlist.title
+              } by ${song.playlist.author.name}\``,
+              embeds: [songEmbed],
+            });
+          } else {
+            if (queue.size < queue.getCapacity()) {
+              queue.insertTrack(song, queue.getSize());
+              console.log(`Songs queued: Queue size is now ${queue.size}`);
+              await interaction.followUp(
+                `**${"Song queued"}**:\n> \`${song.title} by ${song.author}\``
+              );
+            } else {
+              await interaction.followUp(
+                `**Queue is currently full with ${queue.size} tracks.**\n> Please wait for more room in the song queue, then try again. `
+              );
+            }
+          }
+        } else
+          await interaction.followUp(
+            `**${"/queue Error"}**: *There are no active songs.*\n> Please play a song first, using \`/play\`.`
           );
-        } else {
-          await interaction.reply(
-            `**Queue is currently full with ${queue.size} tracks.**\n> Please wait for more room in the song queue, then try again. `
-          );
-        }
-      } else
-        await interaction.reply(
-          `**${"/queue Error"}**: There are no active songs.\nPlease play a song first, using \`/play\`.`
-        );
+      }
     }
   },
 };

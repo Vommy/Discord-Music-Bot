@@ -1,5 +1,5 @@
 const { SlashCommandBuilder } = require("@discordjs/builders");
-import { GuildQueue, Player, Track } from "discord-player";
+import { GuildQueue, Player, Playlist, Track } from "discord-player";
 const { useMainPlayer, useQueue } = require("discord-player");
 
 import {
@@ -39,22 +39,43 @@ module.exports = {
           ephemeral: true,
         });
       }
-      const audio = interaction.options.getString("audio_title_uri");
+      let audio: string | Playlist | null =
+        interaction.options.getString("audio_title_uri");
       if (audio) {
         await interaction.deferReply();
 
         const queue: GuildQueue = useQueue(interaction.guild?.id);
+        const searchResult = await player.search(audio, {
+          requestedBy: interaction.user,
+        });
+
+        // Need to check if what is being played is a playlist or a single song.
+        if (searchResult.playlist) {
+          console.log(
+            `/play has found a playlist called ${searchResult.playlist}`
+          );
+          audio = searchResult.playlist;
+        }
+
         if (!queue || (queue.size <= 1 && !queue.isPlaying)) {
           try {
             const { track } = await player.play(channel, audio, {
               nodeOptions: {
                 // nodeOptions are the options for guild node (aka your queue in simple word)
                 metadata: interaction, // we can access this metadata object using queue.metadata later on
+                leaveOnStop: true, //If player should leave the voice channel after user stops the player
+                leaveOnStopCooldown: 240000, //Cooldown in ms
+                leaveOnEnd: true, //If player should leave after the whole queue is over
+                leaveOnEndCooldown: 240000, //Cooldown in ms
               },
             });
             console.log("Playing audio");
+            if (track.playlist)
+              return interaction.followUp(
+                `**Playlist added!**\n> \`${track.playlist.title} by ${track.playlist.author.name}\`\n**Now playing**:\n> \`${track.title} by ${track.author}\``
+              );
             return interaction.followUp(
-              `**${"Now playing"}**:\n> \`${track.title} by ${track.author}\``
+              `**${"Song added!"}**\n> \`${track.title} by ${track.author}\``
             );
           } catch (e) {
             console.error(`No Audio: ${e}`);
@@ -72,22 +93,26 @@ module.exports = {
           }
         } else {
           try {
-            const searchResult = await player.search(audio, {
-              requestedBy: interaction.user,
-            });
-            if (queue.currentTrack)
-              //Need to check if the audio being queued is a playlist or a single track.
+            if (queue.currentTrack) {
+              if (searchResult.playlist)
+                //Need to check if the audio being queued is a playlist or a single track.
+                return interaction.followUp(
+                  `**Playlist detected.**\n> Please queue your playlist using \`\\queue\`. `
+                );
               // If it is a playlist, we need to tell the user to use queue instead of play.
-              queue.insertTrack(
-                searchResult.tracks[0],
-                queue.node.getTrackPosition(queue.currentTrack) + 1
-              );
-            console.log("Play: Player currently playing. Queued song...");
-            return interaction.followUp(
-              `**${"Playing next"}**:\n> \`${searchResult.tracks[0].title} by ${
-                searchResult.tracks[0].author
-              }\``
-            );
+              else {
+                queue.insertTrack(
+                  searchResult.tracks[0],
+                  queue.node.getTrackPosition(queue.currentTrack) + 1
+                );
+                console.log("Play: Player currently playing. Queued song...");
+                return interaction.followUp(
+                  `**${"Playing next"}**:\n> \`${
+                    searchResult.tracks[0].title
+                  } by ${searchResult.tracks[0].author}\``
+                );
+              }
+            }
           } catch (e) {
             console.error(`No Audio: ${e}`);
             return interaction

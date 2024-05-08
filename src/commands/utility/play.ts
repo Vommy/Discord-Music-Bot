@@ -25,9 +25,7 @@ module.exports = {
         .setRequired(true)
     ),
   async execute(interaction: ChatInputCommandInteraction) {
-    // FIX: NEED TO CHECK IF THERE IS AN EXISTING QUEUE.
     const player: Player = useMainPlayer();
-    //player.options.skipFFmpeg = false;
     await player.extractors.loadDefault();
     const member = await interaction.guild?.members.fetch({
       user: interaction.user.id,
@@ -56,12 +54,8 @@ module.exports = {
 
         // Need to check if what is being played is a playlist or a single song.
         if (searchResult.playlist) {
-          console.log(
-            `/play has found a playlist called ${searchResult.playlist}`
-          );
           audio = searchResult.playlist;
         }
-        console.log("Queue exists: " + (queue !== undefined && queue !== null));
 
         if (
           !queue ||
@@ -69,22 +63,20 @@ module.exports = {
           queue.dispatcher?.audioResource === undefined ||
           queue.dispatcher.audioResource === null
         ) {
-          console.log("Going futher...");
           try {
             const { track } = await player.play(channel, audio, {
               nodeOptions: {
-                // nodeOptions are the options for guild node (aka your queue in simple word)
-                metadata: interaction, // we can access this metadata object using queue.metadata later on
-                leaveOnStop: true, //If player should leave the voice channel after user stops the player
+                metadata: interaction,
+                leaveOnStop: true,
                 leaveOnStopCooldown: 240000, //Cooldown in ms
-                leaveOnEnd: true, //If player should leave after the whole queue is over
+                leaveOnEnd: true,
                 leaveOnEndCooldown: 240000, //Cooldown in ms
               },
             });
             console.log("Playing audio");
             if (track.playlist)
               return interaction.followUp(
-                `**Playlist added!**\n> \`${track.playlist.title} by ${track.playlist.author.name}\`\n**Now playing**:\n> \`${track.title} by ${track.author}\``
+                `**Playlist added!**\n> \`${track.playlist.title} by ${track.playlist.author.name}\`\n**Up next**:\n> \`${track.title} by ${track.author}\``
               );
             return interaction.followUp(
               `**${"Song added!"}**\n> \`${track.title} by ${track.author}\``
@@ -93,7 +85,7 @@ module.exports = {
             console.error(`No Audio: ${e}`);
             return interaction
               .followUp({
-                content: `**${"Something went wrong."}** We couldn't play your track.\n`,
+                content: `**We couldn't play your track.**\n`,
                 ephemeral: true,
               })
               .then(() => {
@@ -105,16 +97,6 @@ module.exports = {
           }
         } else {
           try {
-            console.log("Queue size: " + queue.size);
-            console.log(
-              `Queue has a song:  ${
-                queue.dispatcher?.audioResource !== null &&
-                queue.dispatcher?.audioResource !== undefined
-              }`
-            );
-            console.log(
-              "Queue song has ended: " + queue.dispatcher?.audioResource
-            );
             if (queue.currentTrack) {
               if (searchResult.playlist)
                 //Need to check if the audio being queued is a playlist or a single track.
@@ -129,9 +111,7 @@ module.exports = {
                 );
                 console.log("Player currently playing. Queued song...");
                 return interaction.followUp(
-                  `**${"Playing next"}**:\n> \`${
-                    searchResult.tracks[0].title
-                  } by ${searchResult.tracks[0].author}\``
+                  `**Playing next"**:\n> \`${searchResult.tracks[0].title} by ${searchResult.tracks[0].author}\``
                 );
               }
             }
@@ -139,12 +119,12 @@ module.exports = {
             console.error(`No Audio: ${e}`);
             return interaction
               .followUp({
-                content: `**${"/play Error"}**: We couldn't queue your track.\n`,
+                content: `**We couldn't queue your track.**\n`,
                 ephemeral: true,
               })
               .then(() => {
                 interaction.followUp({
-                  content: `Try providing a different song/playlist title or url.`,
+                  content: `> \`Try providing a different song/playlist title or url.\``,
                   ephemeral: true,
                 });
               });
@@ -154,12 +134,12 @@ module.exports = {
         console.log("Can't play track: ");
         return interaction
           .followUp({
-            content: `**${"Something went wrong."}** We couldn't find the track you requested.\n`,
+            content: `**We couldn't find the track you requested.**\n`,
             ephemeral: true,
           })
           .then(() => {
             interaction.followUp({
-              content: `Please provide a different URL or track title.`,
+              content: `> \`Please provide a different URL or track title.\``,
               ephemeral: true,
             });
           });

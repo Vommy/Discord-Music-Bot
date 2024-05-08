@@ -137,6 +137,12 @@ player.events.on("audioTrackAdd", (queue, track) => {
   }
 });
 
+player.events.on("disconnect", (queue) => {
+  queue.metadata.channel.send({
+    content: `**${queue.player.client.user?.username} Disconnected!**\n> \`Thanks for using ${queue.player.client.user?.username}!\``,
+  });
+});
+
 player.events.on("error", (queue, e) => {
   console.log("Error", e);
 });

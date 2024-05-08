@@ -111,7 +111,7 @@ module.exports = {
                 );
                 console.log("Player currently playing. Queued song...");
                 return interaction.followUp(
-                  `**Playing next"**:\n> \`${searchResult.tracks[0].title} by ${searchResult.tracks[0].author}\``
+                  `**Playing next**:\n> \`${searchResult.tracks[0].title} by ${searchResult.tracks[0].author}\``
                 );
               }
             }

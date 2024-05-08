@@ -9,9 +9,7 @@ import {
 
 /**
  * Connects the bot to a voice channel that the user is connected to.
- * @fix If an incorrent URL or title is provided where the bot cannot find an appropriate resource,
- * then there will be a conflict with one of the interaction replies with the interaction replies of app.ts.
- * */
+ **/
 module.exports = {
   data: new SlashCommandBuilder()
     .setName("play")
@@ -29,9 +27,16 @@ module.exports = {
   async execute(interaction: ChatInputCommandInteraction) {
     // FIX: NEED TO CHECK IF THERE IS AN EXISTING QUEUE.
     const player: Player = useMainPlayer();
+    //player.options.skipFFmpeg = false;
     await player.extractors.loadDefault();
-    const member = await interaction.guild?.members.fetch(interaction.user.id);
-    if (member) {
+    const member = await interaction.guild?.members.fetch({
+      user: interaction.user.id,
+      force: true,
+      cache: false,
+    });
+    console.log(member !== undefined);
+    if (member !== undefined) {
+      console.log("Its something else");
       const channel = member.voice.channel;
       if (!channel) {
         return interaction.reply({
@@ -56,8 +61,15 @@ module.exports = {
           );
           audio = searchResult.playlist;
         }
+        console.log("Queue exists: " + (queue !== undefined && queue !== null));
 
-        if (!queue || (queue.size <= 1 && !queue.isPlaying)) {
+        if (
+          !queue ||
+          (queue.size <= 1 && !queue.isPlaying) ||
+          queue.dispatcher?.audioResource === undefined ||
+          queue.dispatcher.audioResource === null
+        ) {
+          console.log("Going futher...");
           try {
             const { track } = await player.play(channel, audio, {
               nodeOptions: {
@@ -93,6 +105,16 @@ module.exports = {
           }
         } else {
           try {
+            console.log("Queue size: " + queue.size);
+            console.log(
+              `Queue has a song:  ${
+                queue.dispatcher?.audioResource !== null &&
+                queue.dispatcher?.audioResource !== undefined
+              }`
+            );
+            console.log(
+              "Queue song has ended: " + queue.dispatcher?.audioResource
+            );
             if (queue.currentTrack) {
               if (searchResult.playlist)
                 //Need to check if the audio being queued is a playlist or a single track.
@@ -105,7 +127,7 @@ module.exports = {
                   searchResult.tracks[0],
                   queue.node.getTrackPosition(queue.currentTrack) + 1
                 );
-                console.log("Play: Player currently playing. Queued song...");
+                console.log("Player currently playing. Queued song...");
                 return interaction.followUp(
                   `**${"Playing next"}**:\n> \`${
                     searchResult.tracks[0].title
@@ -142,7 +164,10 @@ module.exports = {
             });
           });
       }
-    }
-    return interaction.followUp("Error: Could not find member!");
+    } else
+      return interaction.followUp({
+        content: `Error: Unable to retrieve member information.`,
+        ephemeral: true,
+      });
   },
 };

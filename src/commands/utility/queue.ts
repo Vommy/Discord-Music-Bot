@@ -57,21 +57,27 @@ module.exports = {
               embeds: [songEmbed],
             });
           } else {
-            if (queue.size < queue.getCapacity()) {
-              queue.insertTrack(song, queue.getSize());
-              console.log(`Songs queued: Queue size is now ${queue.size}`);
+            //BUG: /queue works even if there is no song after a song has been played.
+            if (queue.dispatcher?.audioResource) {
+              if (queue.size < queue.getCapacity()) {
+                queue.insertTrack(song, queue.getSize());
+                console.log(`Songs queued: Queue size is now ${queue.size}`);
+                await interaction.followUp(
+                  `**${"Song queued"}**:\n> \`${song.title} by ${song.author}\``
+                );
+              } else {
+                await interaction.followUp(
+                  `**Queue is currently full with ${queue.size} tracks.**\n> Please wait for more room in the song queue, then try again. `
+                );
+              }
+            } else
               await interaction.followUp(
-                `**${"Song queued"}**:\n> \`${song.title} by ${song.author}\``
+                `**There are no active songs.**\n> Please play a song first, using \`/play\`.`
               );
-            } else {
-              await interaction.followUp(
-                `**Queue is currently full with ${queue.size} tracks.**\n> Please wait for more room in the song queue, then try again. `
-              );
-            }
           }
         } else
           await interaction.followUp(
-            `**${"/queue Error"}**: *There are no active songs.*\n> Please play a song first, using \`/play\`.`
+            `**There are no active songs.**\n> Please play a song first, using \`/play\`.`
           );
       }
     }

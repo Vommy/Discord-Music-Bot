@@ -64,6 +64,8 @@ module.exports = {
         let playlistSkip = interaction.options.getString("playlist");
         let validPlaylist = true;
         let isPartPlaylist = false;
+        let skipOn = queue.repeatMode;
+        if (skipOn) queue.setRepeatMode(0);
         if (playlistSkip) {
           const playlists = getPlaylists(queue);
           if (playlists?.includes("playlistSkip")) {
@@ -82,6 +84,7 @@ module.exports = {
             }
           } else validPlaylist = false;
         } else queue.node.skip();
+        if (skipOn && skipOn > 1) queue.setRepeatMode(skipOn);
         let nextSong: Track | undefined;
         if (queue.node.getTrackPosition(song) < queue.size - 1) {
           let nextSongPos = queue.node.getTrackPosition(song) + 1;

@@ -4,7 +4,7 @@
   "description": "A Discord Bot that plays music from different sources such as YouTube and Spotify. Features basic play, pause, queue, skip, connect, and disconnect features. ",
   "main": "dist/app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "mocha dist/test/",
     "dev": "tsx watch src/app.ts",
     "build": "tsc",
     "start": "node ."
@@ -20,7 +20,12 @@
   },
   "homepage": "https://github.com/Vommy/Discord-Music-Bot#readme",
   "devDependencies": {
-    "mocha": "^10.3.0"
+    "@types/chai": "^4.3.16",
+    "@types/mocha": "^10.0.6",
+    "@types/sinon": "^17.0.3",
+    "chai": "^5.1.1",
+    "mocha": "^10.3.0",
+    "sinon": "^18.0.0"
   },
   "dependencies": {
     "@discordjs/opus": "github:discordjs/opus",
